@@ -4,24 +4,12 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * 0' # Weekly schedule
 
 jobs:
-  approve-deployment:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Await Approval
-        uses: flyweight/actions-await-approval@v0.3.1
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   rotate-certificates:
-    needs: approve-deployment
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
