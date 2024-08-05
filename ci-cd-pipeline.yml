@@ -1,0 +1,46 @@
+name: CI/CD Pipeline for SSL Certificate Rotation
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 0' # Weekly schedule
+
+jobs:
+  approve-deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Approval Step
+        uses: hmarr/auto-approve-action@v2.0.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  rotate-certificates:
+    needs: approve-deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Rotate Certificates
+        run: |
+          ./rotate_certificates.sh
+
+      - name: Test New Certificate
+        run: |
+          ./test_certificate.sh
+
+      - name: Rollback if Test Fails
+        if: failure()
+        run: |
+          ./rollback_certificate.sh
+
+      - name: Update Prometheus Metrics
+        run: |
+          ./update_prometheus_metrics.sh
+
+      - name: Cleanup Old Certificates
+        run: |
+          ./cleanup_old_certificates.sh
