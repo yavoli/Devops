@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * 0' # Weekly schedule
@@ -12,10 +15,10 @@ jobs:
   approve-deployment:
     runs-on: ubuntu-latest
     steps:
-      - name: Approval Step
-        uses: hmarr/auto-approve-action@v2.0.0
+      - name: Await Approval
+        uses: flyweight/actions-await-approval@v0.3.1
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   rotate-certificates:
     needs: approve-deployment
@@ -25,22 +28,17 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Rotate Certificates
-        run: |
-          ./rotate_certificates.sh
+        run: ./rotate_certificates.sh
 
       - name: Test New Certificate
-        run: |
-          ./test_certificate.sh
+        run: ./test_certificate.sh
 
       - name: Rollback if Test Fails
         if: failure()
-        run: |
-          ./rollback_certificate.sh
+        run: ./rollback_certificate.sh
 
       - name: Update Prometheus Metrics
-        run: |
-          ./update_prometheus_metrics.sh
+        run: ./update_prometheus_metrics.sh
 
       - name: Cleanup Old Certificates
-        run: |
-          ./cleanup_old_certificates.sh
+        run: ./cleanup_old_certificates.sh
